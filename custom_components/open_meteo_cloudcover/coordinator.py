@@ -49,10 +49,14 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from Open-Meteo API."""
+        # Use Home Assistant's configured timezone
+        timezone = str(self.hass.config.time_zone)
+
         params = {
             "latitude": self.latitude,
             "longitude": self.longitude,
             "forecast_days": self.forecast_days,
+            "timezone": timezone,  # Request data in HA timezone
             "hourly": ",".join([
                 "evapotranspiration",
                 "soil_temperature_0cm",
