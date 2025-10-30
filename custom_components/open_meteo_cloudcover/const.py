@@ -17,6 +17,16 @@ MAX_FORECAST_DAYS = 7
 # API
 API_URL = "https://api.open-meteo.com/v1/forecast"
 
+# Day names for forecast sensors
+def get_day_name(day_offset: int) -> str:
+    """Get friendly name for day offset."""
+    if day_offset == 0:
+        return "Today"
+    elif day_offset == 1:
+        return "Tomorrow"
+    else:
+        return f"Day {day_offset}"
+
 # Sensor types
 SENSOR_TYPES = {
     "evapotranspiration": {

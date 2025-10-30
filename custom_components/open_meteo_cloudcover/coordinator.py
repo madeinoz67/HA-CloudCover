@@ -1,7 +1,7 @@
 """DataUpdateCoordinator for Open-Meteo CloudCover integration."""
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 import logging
 from typing import Any
 
@@ -13,6 +13,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
+from homeassistant.util import dt as dt_util
 
 from .const import (
     API_URL,
@@ -52,10 +53,16 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         # Use Home Assistant's configured timezone
         timezone = str(self.hass.config.time_zone)
 
+        # Calculate date range: from today to forecast_days in the future
+        now = dt_util.now()
+        start_date = now.strftime("%Y-%m-%d")
+        end_date = (now + timedelta(days=self.forecast_days)).strftime("%Y-%m-%d")
+
         params = {
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "forecast_days": self.forecast_days,
+            "start_date": start_date,
+            "end_date": end_date,
             "timezone": timezone,  # Request data in HA timezone
             "hourly": ",".join([
                 "evapotranspiration",
@@ -77,35 +84,15 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                         data = await response.json()
 
                         # Transform the data to make it easier to work with
-                        # Extract the latest (most recent) value for each sensor
+                        # Group hourly forecast data by day
                         hourly = data.get("hourly", {})
                         times = hourly.get("time", [])
 
                         if not times:
                             raise UpdateFailed("No data received from Open-Meteo API")
 
-                        # Get the index of the most recent time entry
-                        latest_idx = len(times) - 1
-
-                        # Build sensor data with current value and historical data
-                        sensor_data = {}
-                        for key in [
-                            "evapotranspiration",
-                            "soil_temperature_0cm",
-                            "soil_moisture_0_to_1cm",
-                            "et0_fao_evapotranspiration",
-                            "cloud_cover",
-                            "cloud_cover_low",
-                            "cloud_cover_mid",
-                            "cloud_cover_high",
-                        ]:
-                            values = hourly.get(key, [])
-                            if values and len(values) > latest_idx:
-                                sensor_data[key] = {
-                                    "current": values[latest_idx],
-                                    "history": list(zip(times, values)),
-                                    "latest_time": times[latest_idx],
-                                }
+                        # Build sensor data grouped by day and metric
+                        sensor_data = self._group_by_day(times, hourly)
 
                         # Add metadata
                         sensor_data["_metadata"] = {
@@ -121,3 +108,68 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
             raise UpdateFailed(f"Error communicating with Open-Meteo API: {err}") from err
         except Exception as err:
             raise UpdateFailed(f"Unexpected error fetching data: {err}") from err
+
+    def _group_by_day(self, times: list[str], hourly: dict[str, list]) -> dict[str, Any]:
+        """Group hourly forecast data by day for each metric."""
+        from collections import defaultdict
+
+        # Group times and values by date
+        daily_data = defaultdict(lambda: defaultdict(list))
+
+        for idx, time_str in enumerate(times):
+            # Parse the timestamp to get the date
+            dt = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+            date_key = dt.date()
+
+            # Store each metric's value for this hour
+            for metric in [
+                "evapotranspiration",
+                "soil_temperature_0cm",
+                "soil_moisture_0_to_1cm",
+                "et0_fao_evapotranspiration",
+                "cloud_cover",
+                "cloud_cover_low",
+                "cloud_cover_mid",
+                "cloud_cover_high",
+            ]:
+                values = hourly.get(metric, [])
+                if idx < len(values) and values[idx] is not None:
+                    daily_data[date_key][metric].append({
+                        "time": time_str,
+                        "value": values[idx],
+                    })
+
+        # Calculate daily aggregates and assign day offsets
+        sensor_data = {}
+        start_date = min(daily_data.keys()) if daily_data else None
+
+        if not start_date:
+            return sensor_data
+
+        for date_key in sorted(daily_data.keys()):
+            # Calculate day offset from start date
+            day_offset = (date_key - start_date).days
+
+            for metric, hourly_values in daily_data[date_key].items():
+                if not hourly_values:
+                    continue
+
+                # Extract just the numeric values for calculations
+                values = [h["value"] for h in hourly_values]
+
+                # Build the sensor data key: metric_dayoffset
+                sensor_key = f"{metric}_{day_offset}"
+
+                sensor_data[sensor_key] = {
+                    "date": str(date_key),
+                    "day_offset": day_offset,
+                    "hourly_forecast": {
+                        "times": [h["time"] for h in hourly_values],
+                        "values": values,
+                    },
+                    "min": round(min(values), 2) if values else None,
+                    "max": round(max(values), 2) if values else None,
+                    "avg": round(sum(values) / len(values), 2) if values else None,
+                }
+
+        return sensor_data
