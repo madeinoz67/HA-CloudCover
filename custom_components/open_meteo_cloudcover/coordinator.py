@@ -120,8 +120,17 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         daily_data = defaultdict(lambda: defaultdict(list))
 
         for idx, time_str in enumerate(times):
-            # Parse the timestamp to get the date
-            dt = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+            # Parse the timestamp and ensure it's timezone-aware
+            # API returns ISO format strings, need to handle both with and without 'Z'
+            if time_str.endswith('Z'):
+                dt = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+            elif '+' in time_str or time_str.count('-') > 2:
+                # Already has timezone info
+                dt = datetime.fromisoformat(time_str)
+            else:
+                # No timezone info, assume UTC
+                dt = datetime.fromisoformat(time_str).replace(tzinfo=dt_util.UTC)
+
             date_key = dt.date()
 
             # Store each metric's value for this hour
