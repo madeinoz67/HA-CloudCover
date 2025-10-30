@@ -135,8 +135,8 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
                 # For this_hour and next_hour, return the value directly
                 if self._special_type in ("this_hour", "next_hour"):
                     return sensor_data.get("value")
-                # For day-based sensors, return current hour value
-                return sensor_data.get("current")
+                # For day-based sensors, return daily average
+                return sensor_data.get("avg")
         return None
 
     @property
