@@ -122,15 +122,16 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
 
         for idx, time_str in enumerate(times):
             # Parse the timestamp - Open-Meteo returns ISO format strings
-            # They may or may not have timezone info depending on the timezone parameter
+            # in the timezone we requested (HA's timezone)
             try:
                 # Try parsing with fromisoformat first
                 dt = datetime.fromisoformat(time_str)
 
-                # If it's naive (no timezone), make it aware using HA's timezone
+                # If it's naive (no timezone), the API returned it in our requested timezone
+                # So we need to attach HA's timezone to it (not convert, just attach)
                 if dt.tzinfo is None:
-                    # Use the Home Assistant timezone to make it aware
-                    dt = dt_util.as_local(dt.replace(tzinfo=timezone.utc))
+                    # The timestamp is already in HA's timezone, just make it aware
+                    dt = dt_util.as_local(dt)
 
             except Exception as err:
                 _LOGGER.warning("Failed to parse timestamp %s: %s", time_str, err)
