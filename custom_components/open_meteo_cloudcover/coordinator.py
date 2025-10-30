@@ -187,28 +187,28 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
 
             # Find this hour and next hour values
             # This hour = the hour block we're currently in (e.g., at 11:30, use 11:00)
-            # Next hour = the following hour block (e.g., at 11:30, use 12:00)
+            # Next hour = the next hour block (e.g., at 11:30, use 12:00)
             this_hour_value = None
             next_hour_value = None
 
-            # Get the current hour (floor to hour boundary)
+            # Get the current hour and next hour boundaries
             current_hour = now.replace(minute=0, second=0, microsecond=0)
+            from datetime import timedelta
+            next_hour_boundary = current_hour + timedelta(hours=1)
 
-            for idx, h in enumerate(all_hourly_values):
+            for h in all_hourly_values:
                 h_hour = h["datetime"].replace(minute=0, second=0, microsecond=0)
 
-                # This hour: matches current hour
+                # This hour: matches current hour boundary
                 if h_hour == current_hour:
                     this_hour_value = h["value"]
-                    # Next hour is the following entry if available
-                    if idx + 1 < len(all_hourly_values):
-                        next_hour_value = all_hourly_values[idx + 1]["value"]
-                    break
-                # If we've passed current hour, use the previous entry as this hour
-                elif h_hour > current_hour:
-                    if idx > 0:
-                        this_hour_value = all_hourly_values[idx - 1]["value"]
+
+                # Next hour: matches next hour boundary
+                if h_hour == next_hour_boundary:
                     next_hour_value = h["value"]
+
+                # Stop if we've found both
+                if this_hour_value is not None and next_hour_value is not None:
                     break
 
             # If no match found, use the last available hour
