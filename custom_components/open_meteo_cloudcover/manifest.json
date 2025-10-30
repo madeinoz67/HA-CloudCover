@@ -1,7 +1,7 @@
 {
   "domain": "open_meteo_cloudcover",
   "name": "Open-Meteo CloudCover",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "codeowners": [
     "@madeinoz67"
   ],
