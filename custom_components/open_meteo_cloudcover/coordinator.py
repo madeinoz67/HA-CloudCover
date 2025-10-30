@@ -50,6 +50,7 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         params = {
             "latitude": self.latitude,
             "longitude": self.longitude,
+            "forecast_days": 2,  # Current day + next day
             "hourly": ",".join([
                 "evapotranspiration",
                 "soil_temperature_0cm",
