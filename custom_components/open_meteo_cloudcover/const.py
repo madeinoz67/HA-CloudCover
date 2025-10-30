@@ -5,10 +5,14 @@ DOMAIN = "open_meteo_cloudcover"
 # Configuration
 CONF_LATITUDE = "latitude"
 CONF_LONGITUDE = "longitude"
+CONF_FORECAST_DAYS = "forecast_days"
 
 # Defaults
 DEFAULT_NAME = "Open-Meteo CloudCover"
 DEFAULT_SCAN_INTERVAL = 3600  # 1 hour in seconds
+DEFAULT_FORECAST_DAYS = 2  # Current day + next day
+MIN_FORECAST_DAYS = 1
+MAX_FORECAST_DAYS = 7
 
 # API
 API_URL = "https://api.open-meteo.com/v1/forecast"

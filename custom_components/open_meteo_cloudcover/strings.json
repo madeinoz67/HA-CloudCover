@@ -6,7 +6,11 @@
         "description": "Enter the location coordinates to monitor cloud cover, weather, and soil conditions.",
         "data": {
           "latitude": "Latitude",
-          "longitude": "Longitude"
+          "longitude": "Longitude",
+          "forecast_days": "Forecast Days (1-7)"
+        },
+        "data_description": {
+          "forecast_days": "Number of days to retrieve forecast data (default: 2 days)"
         }
       }
     },

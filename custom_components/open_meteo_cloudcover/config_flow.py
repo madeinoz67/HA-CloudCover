@@ -14,9 +14,13 @@ from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
     API_URL,
+    CONF_FORECAST_DAYS,
     CONF_LATITUDE,
     CONF_LONGITUDE,
+    DEFAULT_FORECAST_DAYS,
     DOMAIN,
+    MAX_FORECAST_DAYS,
+    MIN_FORECAST_DAYS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -96,6 +100,10 @@ class OpenMeteoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_LONGITUDE,
                     default=self.hass.config.longitude,
                 ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_FORECAST_DAYS,
+                    default=DEFAULT_FORECAST_DAYS,
+                ): vol.All(vol.Coerce(int), vol.Range(min=MIN_FORECAST_DAYS, max=MAX_FORECAST_DAYS)),
             }
         )
 

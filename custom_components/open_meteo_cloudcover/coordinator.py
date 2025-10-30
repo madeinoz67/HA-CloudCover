@@ -33,10 +33,12 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         hass: HomeAssistant,
         latitude: float,
         longitude: float,
+        forecast_days: int = 2,
     ) -> None:
         """Initialize the coordinator."""
         self.latitude = latitude
         self.longitude = longitude
+        self.forecast_days = forecast_days
 
         super().__init__(
             hass,
@@ -50,7 +52,7 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         params = {
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "forecast_days": 2,  # Current day + next day
+            "forecast_days": self.forecast_days,
             "hourly": ",".join([
                 "evapotranspiration",
                 "soil_temperature_0cm",
