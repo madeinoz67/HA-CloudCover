@@ -116,6 +116,10 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
         if SENSOR_TYPES[sensor_type]["state_class"]:
             self._attr_state_class = SENSOR_TYPES[sensor_type]["state_class"]
 
+        # Disable by default for cloud_cover_low, cloud_cover_mid, cloud_cover_high
+        if sensor_type in ("cloud_cover_low", "cloud_cover_mid", "cloud_cover_high"):
+            self._attr_entity_registry_enabled_default = False
+
         # Device info to group all sensors under one device
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
