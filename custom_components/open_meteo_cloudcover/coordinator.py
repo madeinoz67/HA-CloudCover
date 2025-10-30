@@ -194,10 +194,12 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                 sensor_key = f"{metric}_{day_offset}"
 
                 # Build hourly forecast as dict with timestamp keys
-                hourly_data = {
-                    h["time"]: h["value"]
-                    for h in hourly_values
-                }
+                # Remove timezone info from timestamp keys for cleaner display
+                hourly_data = {}
+                for h in hourly_values:
+                    # Get just the datetime part without timezone offset
+                    time_str = h["datetime"].strftime("%Y-%m-%dT%H:%M")
+                    hourly_data[time_str] = h["value"]
 
                 sensor_data[sensor_key] = {
                     "date": str(date_key),
