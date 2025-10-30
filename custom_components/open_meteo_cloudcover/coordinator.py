@@ -164,23 +164,42 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         # Use current date (today) as the reference for day offset calculation
         today = now.date()
 
-        # First pass: extract this_hour and next_hour for each metric from today's data
-        today_data = daily_data.get(today, {})
-        for metric, hourly_values in today_data.items():
-            if not hourly_values:
+        # First pass: extract this_hour and next_hour for each metric from all available data
+        # We need to look across all days since "now" might be late in the day
+        for metric in [
+            "evapotranspiration",
+            "soil_temperature_0cm",
+            "soil_moisture_0_to_1cm",
+            "et0_fao_evapotranspiration",
+            "cloud_cover",
+            "cloud_cover_low",
+            "cloud_cover_mid",
+            "cloud_cover_high",
+        ]:
+            # Collect all hourly values for this metric across all days
+            all_hourly_values = []
+            for date_key in sorted(daily_data.keys()):
+                if metric in daily_data[date_key]:
+                    all_hourly_values.extend(daily_data[date_key][metric])
+
+            if not all_hourly_values:
                 continue
 
             # Find this hour and next hour values
             this_hour_value = None
             next_hour_value = None
 
-            for idx, h in enumerate(hourly_values):
+            for idx, h in enumerate(all_hourly_values):
                 if h["datetime"] >= now:
                     this_hour_value = h["value"]
                     # Next hour is the following entry if available
-                    if idx + 1 < len(hourly_values):
-                        next_hour_value = hourly_values[idx + 1]["value"]
+                    if idx + 1 < len(all_hourly_values):
+                        next_hour_value = all_hourly_values[idx + 1]["value"]
                     break
+
+            # If no future hour found, use the last available hour
+            if this_hour_value is None and all_hourly_values:
+                this_hour_value = all_hourly_values[-1]["value"]
 
             # Store this_hour and next_hour as special sensor keys
             if this_hour_value is not None:
