@@ -113,6 +113,9 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         """Group hourly forecast data by day for each metric."""
         from collections import defaultdict
 
+        # Get current time for finding closest hour
+        now = dt_util.now()
+
         # Group times and values by date
         daily_data = defaultdict(lambda: defaultdict(list))
 
@@ -137,6 +140,7 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     daily_data[date_key][metric].append({
                         "time": time_str,
                         "value": values[idx],
+                        "datetime": dt,
                     })
 
         # Calculate daily aggregates and assign day offsets
@@ -157,12 +161,28 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                 # Extract just the numeric values for calculations
                 values = [h["value"] for h in hourly_values]
 
+                # Find the current hour's value (closest to now without going into the past)
+                current_value = None
+                if day_offset == 0:  # Only for today
+                    # Find the value for current or next hour
+                    for h in hourly_values:
+                        if h["datetime"] >= now:
+                            current_value = h["value"]
+                            break
+                    # If no future hour found, use the last hour of today
+                    if current_value is None and hourly_values:
+                        current_value = hourly_values[-1]["value"]
+                else:
+                    # For future days, use first hour of the day
+                    current_value = hourly_values[0]["value"] if hourly_values else None
+
                 # Build the sensor data key: metric_dayoffset
                 sensor_key = f"{metric}_{day_offset}"
 
                 sensor_data[sensor_key] = {
                     "date": str(date_key),
                     "day_offset": day_offset,
+                    "current": current_value,
                     "hourly_forecast": {
                         "times": [h["time"] for h in hourly_values],
                         "values": values,

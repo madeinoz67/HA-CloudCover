@@ -94,11 +94,11 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Return the state of the sensor (daily average)."""
+        """Return the state of the sensor (current hour value for today, first hour for future days)."""
         if self.coordinator.data:
             sensor_data = self.coordinator.data.get(self._sensor_key)
             if sensor_data:
-                return sensor_data.get("avg")
+                return sensor_data.get("current")
         return None
 
     @property
