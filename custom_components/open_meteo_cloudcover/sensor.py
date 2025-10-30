@@ -35,6 +35,26 @@ async def async_setup_entry(
     # Create sensor entities for each sensor type and each day
     entities = []
     for sensor_type in SENSOR_TYPES:
+        # Create "This Hour" and "Next Hour" sensors
+        entities.append(
+            OpenMeteoSensor(
+                coordinator=coordinator,
+                entry=entry,
+                sensor_type=sensor_type,
+                day_offset=None,
+                special_type="this_hour",
+            )
+        )
+        entities.append(
+            OpenMeteoSensor(
+                coordinator=coordinator,
+                entry=entry,
+                sensor_type=sensor_type,
+                day_offset=None,
+                special_type="next_hour",
+            )
+        )
+
         # Create a sensor for each day (0 = today, 1 = tomorrow, etc.)
         for day_offset in range(forecast_days + 1):  # +1 to include today
             entities.append(
@@ -43,6 +63,7 @@ async def async_setup_entry(
                     entry=entry,
                     sensor_type=sensor_type,
                     day_offset=day_offset,
+                    special_type=None,
                 )
             )
 
@@ -57,21 +78,34 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
         coordinator: OpenMeteoDataUpdateCoordinator,
         entry: ConfigEntry,
         sensor_type: str,
-        day_offset: int,
+        day_offset: int | None,
+        special_type: str | None = None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
 
         self._sensor_type = sensor_type
         self._day_offset = day_offset
-        self._sensor_key = f"{sensor_type}_{day_offset}"
+        self._special_type = special_type
 
-        # Build friendly name with day label
-        day_name = get_day_name(day_offset)
+        # Build sensor key and name based on type
         base_name = SENSOR_TYPES[sensor_type]["name"]
-        self._attr_name = f"{base_name} {day_name}"
 
-        self._attr_unique_id = f"{entry.entry_id}_{sensor_type}_{day_offset}"
+        if special_type == "this_hour":
+            self._sensor_key = f"{sensor_type}_this_hour"
+            self._attr_name = f"{base_name} This Hour"
+            self._attr_unique_id = f"{entry.entry_id}_{sensor_type}_this_hour"
+        elif special_type == "next_hour":
+            self._sensor_key = f"{sensor_type}_next_hour"
+            self._attr_name = f"{base_name} Next Hour"
+            self._attr_unique_id = f"{entry.entry_id}_{sensor_type}_next_hour"
+        else:
+            # Regular day-based sensor
+            self._sensor_key = f"{sensor_type}_{day_offset}"
+            day_name = get_day_name(day_offset)
+            self._attr_name = f"{base_name} {day_name}"
+            self._attr_unique_id = f"{entry.entry_id}_{sensor_type}_{day_offset}"
+
         self._attr_icon = SENSOR_TYPES[sensor_type]["icon"]
 
         # Set device class if available
@@ -94,10 +128,14 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Return the state of the sensor (current hour value for today, first hour for future days)."""
+        """Return the state of the sensor."""
         if self.coordinator.data:
             sensor_data = self.coordinator.data.get(self._sensor_key)
             if sensor_data:
+                # For this_hour and next_hour, return the value directly
+                if self._special_type in ("this_hour", "next_hour"):
+                    return sensor_data.get("value")
+                # For day-based sensors, return current hour value
                 return sensor_data.get("current")
         return None
 
@@ -115,6 +153,16 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
         sensor_data = self.coordinator.data.get(self._sensor_key, {})
         metadata = self.coordinator.data.get("_metadata", {})
 
+        # For this_hour and next_hour sensors, return minimal attributes
+        if self._special_type in ("this_hour", "next_hour"):
+            return {
+                "latitude": metadata.get("latitude"),
+                "longitude": metadata.get("longitude"),
+                "timezone": metadata.get("timezone"),
+                "elevation": metadata.get("elevation"),
+            }
+
+        # For day-based sensors, include full forecast data
         attributes = {
             "date": sensor_data.get("date"),
             "day_offset": sensor_data.get("day_offset"),

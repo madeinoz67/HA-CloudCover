@@ -164,6 +164,38 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         # Use current date (today) as the reference for day offset calculation
         today = now.date()
 
+        # First pass: extract this_hour and next_hour for each metric from today's data
+        today_data = daily_data.get(today, {})
+        for metric, hourly_values in today_data.items():
+            if not hourly_values:
+                continue
+
+            # Find this hour and next hour values
+            this_hour_value = None
+            next_hour_value = None
+
+            for idx, h in enumerate(hourly_values):
+                if h["datetime"] >= now:
+                    this_hour_value = h["value"]
+                    # Next hour is the following entry if available
+                    if idx + 1 < len(hourly_values):
+                        next_hour_value = hourly_values[idx + 1]["value"]
+                    break
+
+            # Store this_hour and next_hour as special sensor keys
+            if this_hour_value is not None:
+                sensor_data[f"{metric}_this_hour"] = {
+                    "value": this_hour_value,
+                    "type": "this_hour",
+                }
+
+            if next_hour_value is not None:
+                sensor_data[f"{metric}_next_hour"] = {
+                    "value": next_hour_value,
+                    "type": "next_hour",
+                }
+
+        # Second pass: process daily data
         for date_key in sorted(daily_data.keys()):
             # Calculate day offset from today (0=today, 1=tomorrow, etc.)
             day_offset = (date_key - today).days
