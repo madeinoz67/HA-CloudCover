@@ -9,7 +9,7 @@ import async_timeout
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
@@ -60,6 +60,14 @@ class OpenMeteoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> OpenMeteoOptionsFlowHandler:
+        """Get the options flow for this handler."""
+        return OpenMeteoOptionsFlowHandler(config_entry)
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
@@ -109,6 +117,79 @@ class OpenMeteoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
+            data_schema=data_schema,
+            errors=errors,
+        )
+
+
+class OpenMeteoOptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle options flow for Open-Meteo CloudCover."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage the options."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            try:
+                # Validate coordinates if they changed
+                new_lat = user_input[CONF_LATITUDE]
+                new_lon = user_input[CONF_LONGITUDE]
+                old_lat = self.config_entry.data[CONF_LATITUDE]
+                old_lon = self.config_entry.data[CONF_LONGITUDE]
+
+                if new_lat != old_lat or new_lon != old_lon:
+                    await validate_coordinates(self.hass, new_lat, new_lon)
+
+                # Update the config entry with new data
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data={
+                        CONF_LATITUDE: new_lat,
+                        CONF_LONGITUDE: new_lon,
+                        CONF_FORECAST_DAYS: user_input[CONF_FORECAST_DAYS],
+                    },
+                )
+
+                # Trigger a coordinator refresh
+                await self.hass.config_entries.async_reload(self.config_entry.entry_id)
+
+                return self.async_create_entry(title="", data={})
+
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except ValueError:
+                errors["base"] = "invalid_coords"
+            except UnknownError:
+                errors["base"] = "unknown"
+
+        # Show form with current values
+        data_schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_LATITUDE,
+                    default=self.config_entry.data.get(CONF_LATITUDE),
+                ): vol.Coerce(float),
+                vol.Required(
+                    CONF_LONGITUDE,
+                    default=self.config_entry.data.get(CONF_LONGITUDE),
+                ): vol.Coerce(float),
+                vol.Required(
+                    CONF_FORECAST_DAYS,
+                    default=self.config_entry.data.get(
+                        CONF_FORECAST_DAYS, DEFAULT_FORECAST_DAYS
+                    ),
+                ): vol.All(vol.Coerce(int), vol.Range(min=MIN_FORECAST_DAYS, max=MAX_FORECAST_DAYS)),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="init",
             data_schema=data_schema,
             errors=errors,
         )

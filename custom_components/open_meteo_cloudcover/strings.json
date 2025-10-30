@@ -22,5 +22,21 @@
     "abort": {
       "already_configured": "This location is already configured"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Reconfigure Open-Meteo CloudCover",
+        "description": "Update the location coordinates or forecast settings.",
+        "data": {
+          "latitude": "Latitude",
+          "longitude": "Longitude",
+          "forecast_days": "Forecast Days (1-7)"
+        },
+        "data_description": {
+          "forecast_days": "Number of days to retrieve forecast data"
+        }
+      }
+    }
   }
 }
