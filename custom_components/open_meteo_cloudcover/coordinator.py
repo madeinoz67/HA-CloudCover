@@ -193,14 +193,17 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                 # Build the sensor data key: metric_dayoffset
                 sensor_key = f"{metric}_{day_offset}"
 
+                # Build hourly forecast as list of dicts with time and value paired
+                hourly_data = [
+                    {"time": h["time"], "value": h["value"]}
+                    for h in hourly_values
+                ]
+
                 sensor_data[sensor_key] = {
                     "date": str(date_key),
                     "day_offset": day_offset,
                     "current": current_value,
-                    "hourly_forecast": {
-                        "times": [h["time"] for h in hourly_values],
-                        "values": values,
-                    },
+                    "hourly_data": hourly_data,
                     "min": round(min(values), 2) if values else None,
                     "max": round(max(values), 2) if values else None,
                     "avg": round(sum(values) / len(values), 2) if values else None,

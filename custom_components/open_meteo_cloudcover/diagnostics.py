@@ -62,21 +62,13 @@ async def async_get_config_entry_diagnostics(
                 "avg": value.get("avg"),
             }
 
-            # Include hourly forecast structure but limit to first few entries
-            hourly = value.get("hourly_forecast", {})
-            if hourly:
-                times = hourly.get("times", [])
-                values = hourly.get("values", [])
-                sensor_info["hourly_forecast_sample"] = {
-                    "count": len(times),
-                    "first_3": {
-                        "times": times[:3] if times else [],
-                        "values": values[:3] if values else [],
-                    },
-                    "last_3": {
-                        "times": times[-3:] if times else [],
-                        "values": values[-3:] if values else [],
-                    },
+            # Include hourly data structure but limit to first few entries
+            hourly_data = value.get("hourly_data", [])
+            if hourly_data:
+                sensor_info["hourly_data_sample"] = {
+                    "count": len(hourly_data),
+                    "first_3": hourly_data[:3] if hourly_data else [],
+                    "last_3": hourly_data[-3:] if hourly_data else [],
                 }
 
             diagnostics_data["sensors"][key] = sensor_info
