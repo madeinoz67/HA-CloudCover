@@ -186,18 +186,32 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                 continue
 
             # Find this hour and next hour values
+            # This hour = the hour block we're currently in (e.g., at 11:30, use 11:00)
+            # Next hour = the following hour block (e.g., at 11:30, use 12:00)
             this_hour_value = None
             next_hour_value = None
 
+            # Get the current hour (floor to hour boundary)
+            current_hour = now.replace(minute=0, second=0, microsecond=0)
+
             for idx, h in enumerate(all_hourly_values):
-                if h["datetime"] >= now:
+                h_hour = h["datetime"].replace(minute=0, second=0, microsecond=0)
+
+                # This hour: matches current hour
+                if h_hour == current_hour:
                     this_hour_value = h["value"]
                     # Next hour is the following entry if available
                     if idx + 1 < len(all_hourly_values):
                         next_hour_value = all_hourly_values[idx + 1]["value"]
                     break
+                # If we've passed current hour, use the previous entry as this hour
+                elif h_hour > current_hour:
+                    if idx > 0:
+                        this_hour_value = all_hourly_values[idx - 1]["value"]
+                    next_hour_value = h["value"]
+                    break
 
-            # If no future hour found, use the last available hour
+            # If no match found, use the last available hour
             if this_hour_value is None and all_hourly_values:
                 this_hour_value = all_hourly_values[-1]["value"]
 
