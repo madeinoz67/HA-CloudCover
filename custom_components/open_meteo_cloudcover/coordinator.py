@@ -112,24 +112,29 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
     def _group_by_day(self, times: list[str], hourly: dict[str, list]) -> dict[str, Any]:
         """Group hourly forecast data by day for each metric."""
         from collections import defaultdict
+        from datetime import timezone
 
-        # Get current time for finding closest hour
+        # Get current time for finding closest hour (timezone-aware)
         now = dt_util.now()
 
         # Group times and values by date
         daily_data = defaultdict(lambda: defaultdict(list))
 
         for idx, time_str in enumerate(times):
-            # Parse the timestamp and ensure it's timezone-aware
-            # API returns ISO format strings, need to handle both with and without 'Z'
-            if time_str.endswith('Z'):
-                dt = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
-            elif '+' in time_str or time_str.count('-') > 2:
-                # Already has timezone info
+            # Parse the timestamp - Open-Meteo returns ISO format strings
+            # They may or may not have timezone info depending on the timezone parameter
+            try:
+                # Try parsing with fromisoformat first
                 dt = datetime.fromisoformat(time_str)
-            else:
-                # No timezone info, assume UTC
-                dt = datetime.fromisoformat(time_str).replace(tzinfo=dt_util.UTC)
+
+                # If it's naive (no timezone), make it aware using HA's timezone
+                if dt.tzinfo is None:
+                    # Use the Home Assistant timezone to make it aware
+                    dt = dt_util.as_local(dt.replace(tzinfo=timezone.utc))
+
+            except Exception as err:
+                _LOGGER.warning("Failed to parse timestamp %s: %s", time_str, err)
+                continue
 
             date_key = dt.date()
 
