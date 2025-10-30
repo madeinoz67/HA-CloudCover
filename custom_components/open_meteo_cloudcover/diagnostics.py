@@ -63,12 +63,14 @@ async def async_get_config_entry_diagnostics(
             }
 
             # Include hourly data structure but limit to first few entries
-            hourly_data = value.get("hourly_data", [])
+            hourly_data = value.get("hourly_data", {})
             if hourly_data:
+                # Get first 3 and last 3 entries from the dict
+                items = list(hourly_data.items())
                 sensor_info["hourly_data_sample"] = {
-                    "count": len(hourly_data),
-                    "first_3": hourly_data[:3] if hourly_data else [],
-                    "last_3": hourly_data[-3:] if hourly_data else [],
+                    "count": len(items),
+                    "first_3": dict(items[:3]) if items else {},
+                    "last_3": dict(items[-3:]) if items else {},
                 }
 
             diagnostics_data["sensors"][key] = sensor_info

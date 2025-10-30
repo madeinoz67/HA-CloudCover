@@ -125,13 +125,10 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
             "elevation": metadata.get("elevation"),
         }
 
-        # Add hourly forecast data for this day using unit of measurement as key
-        hourly_data = sensor_data.get("hourly_data", [])
+        # Add hourly forecast data for this day
+        hourly_data = sensor_data.get("hourly_data", {})
         if hourly_data:
-            # Use the unit of measurement as the attribute name
-            unit = SENSOR_TYPES[self._sensor_type]["unit"]
             attributes["forecast_data"] = hourly_data
-            attributes["unit_of_measurement"] = unit
             attributes["min"] = sensor_data.get("min")
             attributes["max"] = sensor_data.get("max")
             attributes["avg"] = sensor_data.get("avg")
