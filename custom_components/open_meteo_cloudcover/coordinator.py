@@ -159,14 +159,13 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
 
         # Calculate daily aggregates and assign day offsets
         sensor_data = {}
-        start_date = min(daily_data.keys()) if daily_data else None
 
-        if not start_date:
-            return sensor_data
+        # Use current date (today) as the reference for day offset calculation
+        today = now.date()
 
         for date_key in sorted(daily_data.keys()):
-            # Calculate day offset from start date
-            day_offset = (date_key - start_date).days
+            # Calculate day offset from today (0=today, 1=tomorrow, etc.)
+            day_offset = (date_key - today).days
 
             for metric, hourly_values in daily_data[date_key].items():
                 if not hourly_values:
