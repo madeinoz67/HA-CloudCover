@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(example-skills:skill-creator)",
+      "Read(//Users/seaton/.claude/plugins/marketplaces/anthropic-agent-skills/skill-creator/**)",
+      "Bash(python scripts/package_skill.py:*)",
+      "Skill(homeassistant)",
+      "WebFetch(domain:api.open-meteo.com)",
+      "Bash(curl:*)",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)",
+      "Bash(cat:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

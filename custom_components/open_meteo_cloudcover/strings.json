@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Open-Meteo CloudCover Configuration",
+        "description": "Enter the location coordinates to monitor cloud cover, weather, and soil conditions.",
+        "data": {
+          "latitude": "Latitude",
+          "longitude": "Longitude"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Open-Meteo API",
+      "invalid_coords": "Invalid coordinates provided",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "This location is already configured"
+    }
+  }
+}
