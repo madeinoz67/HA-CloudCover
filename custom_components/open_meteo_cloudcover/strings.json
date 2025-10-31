@@ -3,14 +3,16 @@
     "step": {
       "user": {
         "title": "Open-Meteo CloudCover Configuration",
-        "description": "Enter the location coordinates to monitor cloud cover, weather, and soil conditions.",
+        "description": "Enter the location name and coordinates to monitor cloud cover, weather, and soil conditions.",
         "data": {
+          "name": "Location Name",
           "latitude": "Latitude",
           "longitude": "Longitude",
           "forecast_days": "Forecast Days (1-7)"
         },
         "data_description": {
-          "forecast_days": "Number of days to retrieve forecast data (default: 2 days)"
+          "name": "Friendly name for this location (e.g., Home, Garden, Office)",
+          "forecast_days": "Number of days to retrieve forecast data (default: 7 days)"
         }
       }
     },
@@ -27,13 +29,15 @@
     "step": {
       "init": {
         "title": "Reconfigure Open-Meteo CloudCover",
-        "description": "Update the location coordinates or forecast settings.",
+        "description": "Update the location name, coordinates, or forecast settings.",
         "data": {
+          "name": "Location Name",
           "latitude": "Latitude",
           "longitude": "Longitude",
           "forecast_days": "Forecast Days (1-7)"
         },
         "data_description": {
+          "name": "Friendly name for this location (e.g., Home, Garden, Office)",
           "forecast_days": "Number of days to retrieve forecast data"
         }
       }

@@ -92,9 +92,8 @@ class OpenMeteoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
                 # Use location name for the title
                 location_name = user_input.get(CONF_NAME, DEFAULT_NAME)
-                title = f"Open-Meteo CloudCover - {location_name}"
 
-                return self.async_create_entry(title=title, data=user_input)
+                return self.async_create_entry(title=location_name, data=user_input)
 
             except CannotConnect:
                 errors["base"] = "cannot_connect"
@@ -158,11 +157,10 @@ class OpenMeteoOptionsFlowHandler(config_entries.OptionsFlow):
 
                 # Update the config entry with new data and title if name changed
                 location_name = user_input.get(CONF_NAME, DEFAULT_NAME)
-                title = f"Open-Meteo CloudCover - {location_name}"
 
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
-                    title=title,
+                    title=location_name,
                     data={
                         CONF_NAME: location_name,
                         CONF_LATITUDE: new_lat,
