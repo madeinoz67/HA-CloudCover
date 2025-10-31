@@ -14,6 +14,7 @@ This integration creates sensors for:
 - **Cloud Cover Low** - Low-altitude cloud coverage (%)
 - **Cloud Cover Mid** - Mid-altitude cloud coverage (%)
 - **Cloud Cover High** - High-altitude cloud coverage (%)
+- **Direct Radiation** - Direct solar radiation (W/m²)
 
 The integration creates sensors for each metric in multiple time formats:
 - **This Hour** - Current hour block value (e.g., at 11:30, shows 11:00 forecast)
@@ -65,12 +66,12 @@ The integration fetches data from the Open-Meteo API at hourly boundaries (XX:00
 
 All sensors are grouped under a single device called "Open-Meteo CloudCover" for easy organization.
 
-**Total Sensors**: 304 sensors (40 enabled by default)
-- This Hour sensors: 8 (enabled)
-- Next Hour sensors: 8 (enabled)
-- Hourly sensors: 192 (24 hours × 8 metrics, disabled by default)
-- Daily sensors (Days 0-2): 24 (enabled)
-- Extended daily sensors (Days 3-7): 40 (disabled by default)
+**Total Sensors**: 342 sensors (45 enabled by default)
+- This Hour sensors: 9 (enabled)
+- Next Hour sensors: 9 (enabled)
+- Hourly sensors: 216 (24 hours × 9 metrics, disabled by default)
+- Daily sensors (Days 0-2): 27 (enabled)
+- Extended daily sensors (Days 3-7): 45 (disabled by default)
 
 **Disabled by Default**:
 - Cloud Cover Low, Mid, and High sensors (all time periods)

@@ -86,4 +86,11 @@ SENSOR_TYPES = {
         "device_class": None,
         "state_class": "measurement",
     },
+    "direct_radiation": {
+        "name": "Direct Radiation",
+        "unit": "W/m²",
+        "icon": "mdi:sun-wireless",
+        "device_class": "irradiance",
+        "state_class": "measurement",
+    },
 }

@@ -83,6 +83,7 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                 "cloud_cover_low",
                 "cloud_cover_mid",
                 "cloud_cover_high",
+                "direct_radiation",
             ]),
         }
 
@@ -159,6 +160,7 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                 "cloud_cover_low",
                 "cloud_cover_mid",
                 "cloud_cover_high",
+                "direct_radiation",
             ]:
                 values = hourly.get(metric, [])
                 if idx < len(values) and values[idx] is not None:
@@ -185,6 +187,7 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
             "cloud_cover_low",
             "cloud_cover_mid",
             "cloud_cover_high",
+            "direct_radiation",
         ]:
             # Collect all hourly values for this metric across all days
             all_hourly_values = []
@@ -297,6 +300,7 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
             "cloud_cover_low",
             "cloud_cover_mid",
             "cloud_cover_high",
+            "direct_radiation",
         ]:
             # Collect all hourly values for this metric across all days
             all_hourly_values = []

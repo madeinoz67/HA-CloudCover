@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Open-Meteo CloudCover is a custom Home Assistant integration that provides cloud cover, weather, and soil condition sensors using the Open-Meteo API. The integration polls the free Open-Meteo API at hourly boundaries (XX:00:05) and creates 304 sensor entities grouped under a single device (40 enabled by default, 264 disabled by default).
+Open-Meteo CloudCover is a custom Home Assistant integration that provides cloud cover, weather, and soil condition sensors using the Open-Meteo API. The integration polls the free Open-Meteo API at hourly boundaries (XX:00:05) and creates 342 sensor entities grouped under a single device (45 enabled by default, 297 disabled by default).
 
 **Domain**: `open_meteo_cloudcover`
 **Integration Type**: Cloud polling service (no API key required)
@@ -37,11 +37,11 @@ This is a standard Home Assistant custom integration following the modern coordi
 
 4. **`sensor.py`** - Sensor entities
    - `OpenMeteoSensor` extends `CoordinatorEntity` and `SensorEntity`
-   - Creates 304 sensor entities across multiple time formats:
-     - 8 "This Hour" sensors (enabled by default)
-     - 8 "Next Hour" sensors (enabled by default)
-     - 192 hourly sensors: Hours 1-24 × 8 metrics (disabled by default)
-     - 64 daily sensors: Days 0-7 × 8 metrics (Days 0-2 enabled, Days 3-7 disabled)
+   - Creates 342 sensor entities across multiple time formats:
+     - 9 "This Hour" sensors (enabled by default)
+     - 9 "Next Hour" sensors (enabled by default)
+     - 216 hourly sensors: Hours 1-24 × 9 metrics (disabled by default)
+     - 72 daily sensors: Days 0-7 × 9 metrics (Days 0-2 enabled, Days 3-7 disabled)
    - All sensors grouped under "Open-Meteo CloudCover" device
    - Daily sensors expose hourly forecast data, min/max/avg in attributes
    - Hourly sensors expose hour_offset attribute
@@ -89,6 +89,7 @@ GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly
 - `cloud_cover_low`
 - `cloud_cover_mid`
 - `cloud_cover_high`
+- `direct_radiation`
 
 The coordinator processes hourly data in multiple passes:
 1. **First pass**: Extract This Hour and Next Hour values using hour boundary matching
