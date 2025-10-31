@@ -3,11 +3,17 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .coordinator import OpenMeteoDataUpdateCoordinator
+
+TO_REDACT = {
+    "latitude",
+    "longitude",
+}
 
 
 async def async_get_config_entry_diagnostics(
@@ -19,14 +25,14 @@ async def async_get_config_entry_diagnostics(
     # Get coordinator data
     coordinator_data = coordinator.data if coordinator.data else {}
 
-    # Build diagnostics data
+    # Build diagnostics data with redacted location info
     diagnostics_data = {
         "entry": {
             "title": entry.title,
             "data": {
                 "latitude": entry.data.get("latitude"),
                 "longitude": entry.data.get("longitude"),
-                "forecast_days": entry.data.get("forecast_days"),
+                "name": entry.data.get("name"),
             },
         },
         "coordinator": {
@@ -41,7 +47,12 @@ async def async_get_config_entry_diagnostics(
         },
         "data_summary": {
             "sensor_count": len([k for k in coordinator_data.keys() if k != "_metadata"]),
-            "metadata": coordinator_data.get("_metadata", {}),
+            "metadata": {
+                "latitude": coordinator_data.get("_metadata", {}).get("latitude"),
+                "longitude": coordinator_data.get("_metadata", {}).get("longitude"),
+                "timezone": coordinator_data.get("_metadata", {}).get("timezone"),
+                "elevation": coordinator_data.get("_metadata", {}).get("elevation"),
+            },
         },
         "sensors": {},
     }
@@ -75,4 +86,5 @@ async def async_get_config_entry_diagnostics(
 
             diagnostics_data["sensors"][key] = sensor_info
 
-    return diagnostics_data
+    # Redact sensitive location data
+    return async_redact_data(diagnostics_data, TO_REDACT)
