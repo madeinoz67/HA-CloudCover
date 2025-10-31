@@ -37,17 +37,29 @@ Each hourly sensor includes:
 
 ## Installation
 
+### HACS Installation (Recommended)
+
+1. Open HACS in Home Assistant
+2. Click on "Integrations"
+3. Click the three dots in the top right corner
+4. Select "Custom repositories"
+5. Add this repository URL: `https://github.com/madeinoz67/open-meteo-cloudcover`
+6. Select category: "Integration"
+7. Click "Add"
+8. Click "Install" on the Open-Meteo CloudCover card
+9. Restart Home Assistant
+10. Go to Settings → Devices & Services → Add Integration
+11. Search for "Open-Meteo CloudCover"
+12. Enter your location name and coordinates (or use defaults)
+
 ### Manual Installation
 
-1. Copy the `custom_components/open_meteo_cloudcover` directory to your Home Assistant's `custom_components` directory
-2. Restart Home Assistant
-3. Go to Settings → Devices & Services → Add Integration
-4. Search for "Open-Meteo CloudCover"
-5. Click "Submit" to use your Home Assistant instance location (or modify the coordinates if needed)
-
-### HACS Installation (Future)
-
-This integration may be added to HACS in the future for easier installation.
+1. Download the latest release from [GitHub Releases](https://github.com/madeinoz67/open-meteo-cloudcover/releases)
+2. Extract the `custom_components/open_meteo_cloudcover` directory to your Home Assistant's `custom_components` directory
+3. Restart Home Assistant
+4. Go to Settings → Devices & Services → Add Integration
+5. Search for "Open-Meteo CloudCover"
+6. Enter your location name and coordinates (or use defaults)
 
 ## Configuration
 
