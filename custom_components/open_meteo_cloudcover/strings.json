@@ -7,12 +7,10 @@
         "data": {
           "name": "Location Name",
           "latitude": "Latitude",
-          "longitude": "Longitude",
-          "forecast_days": "Forecast Days (1-7)"
+          "longitude": "Longitude"
         },
         "data_description": {
-          "name": "Friendly name for this location (e.g., Home, Garden, Office)",
-          "forecast_days": "Number of days to retrieve forecast data (default: 7 days)"
+          "name": "Friendly name for this location (e.g., Home, Garden, Office)"
         }
       }
     },
@@ -29,16 +27,14 @@
     "step": {
       "init": {
         "title": "Reconfigure Open-Meteo CloudCover",
-        "description": "Update the location name, coordinates, or forecast settings.",
+        "description": "Update the location name or coordinates.",
         "data": {
           "name": "Location Name",
           "latitude": "Latitude",
-          "longitude": "Longitude",
-          "forecast_days": "Forecast Days (1-7)"
+          "longitude": "Longitude"
         },
         "data_description": {
-          "name": "Friendly name for this location (e.g., Home, Garden, Office)",
-          "forecast_days": "Number of days to retrieve forecast data"
+          "name": "Friendly name for this location (e.g., Home, Garden, Office)"
         }
       }
     }

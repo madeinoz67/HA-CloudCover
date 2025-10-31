@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_FORECAST_DAYS, CONF_LATITUDE, CONF_LONGITUDE, DEFAULT_FORECAST_DAYS, DOMAIN
+from .const import CONF_LATITUDE, CONF_LONGITUDE, DOMAIN
 from .coordinator import OpenMeteoDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,13 +19,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Open-Meteo CloudCover from a config entry."""
     latitude = entry.data[CONF_LATITUDE]
     longitude = entry.data[CONF_LONGITUDE]
-    forecast_days = entry.data.get(CONF_FORECAST_DAYS, DEFAULT_FORECAST_DAYS)
 
     coordinator = OpenMeteoDataUpdateCoordinator(
         hass,
         latitude=latitude,
         longitude=longitude,
-        forecast_days=forecast_days,
     )
 
     # Fetch initial data
