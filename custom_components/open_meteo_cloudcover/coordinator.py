@@ -34,7 +34,7 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         hass: HomeAssistant,
         latitude: float,
         longitude: float,
-        forecast_days: int = 2,
+        forecast_days: int = 7,
     ) -> None:
         """Initialize the coordinator."""
         self.latitude = latitude
@@ -285,6 +285,52 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     "max": round(max(values), 2) if values else None,
                     "avg": round(sum(values) / len(values), 2) if values else None,
                 }
+
+        # Third pass: Extract hourly sensors (hours 1-24 from current time)
+        # Collect all hourly values across all days for each metric
+        for metric in [
+            "evapotranspiration",
+            "soil_temperature_0cm",
+            "soil_moisture_0_to_1cm",
+            "et0_fao_evapotranspiration",
+            "cloud_cover",
+            "cloud_cover_low",
+            "cloud_cover_mid",
+            "cloud_cover_high",
+        ]:
+            # Collect all hourly values for this metric across all days
+            all_hourly_values = []
+            for date_key in sorted(daily_data.keys()):
+                if metric in daily_data[date_key]:
+                    all_hourly_values.extend(daily_data[date_key][metric])
+
+            if not all_hourly_values:
+                continue
+
+            # Sort by datetime to ensure proper ordering
+            all_hourly_values.sort(key=lambda h: h["datetime"])
+
+            # Find hours 1-24 from current time
+            for hour_offset in range(1, 25):
+                target_hour = now + timedelta(hours=hour_offset)
+                target_hour_boundary = target_hour.replace(minute=0, second=0, microsecond=0)
+
+                # Find the value for this hour
+                hour_value = None
+                for h in all_hourly_values:
+                    h_hour = h["datetime"].replace(minute=0, second=0, microsecond=0)
+                    if h_hour == target_hour_boundary:
+                        hour_value = h["value"]
+                        break
+
+                # Store the hourly sensor data if found
+                if hour_value is not None:
+                    sensor_key = f"{metric}_hour_{hour_offset}"
+                    sensor_data[sensor_key] = {
+                        "value": hour_value,
+                        "hour_offset": hour_offset,
+                        "type": "hourly",
+                    }
 
         # Adjust next update to align with hour boundary
         self.update_interval = self._calculate_next_update_interval()

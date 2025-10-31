@@ -17,7 +17,9 @@ from .const import (
     CONF_FORECAST_DAYS,
     CONF_LATITUDE,
     CONF_LONGITUDE,
+    CONF_NAME,
     DEFAULT_FORECAST_DAYS,
+    DEFAULT_NAME,
     DOMAIN,
     MAX_FORECAST_DAYS,
     MIN_FORECAST_DAYS,
@@ -46,7 +48,7 @@ async def validate_coordinates(
                     if "hourly" not in data:
                         raise ValueError("Invalid response from API")
 
-                    return {"title": f"Open-Meteo CloudCover ({latitude}, {longitude})"}
+                    return True
 
     except aiohttp.ClientError:
         raise CannotConnect
@@ -76,7 +78,7 @@ class OpenMeteoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             try:
-                info = await validate_coordinates(
+                await validate_coordinates(
                     self.hass,
                     user_input[CONF_LATITUDE],
                     user_input[CONF_LONGITUDE],
@@ -88,7 +90,11 @@ class OpenMeteoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
                 self._abort_if_unique_id_configured()
 
-                return self.async_create_entry(title=info["title"], data=user_input)
+                # Use location name for the title
+                location_name = user_input.get(CONF_NAME, DEFAULT_NAME)
+                title = f"Open-Meteo CloudCover - {location_name}"
+
+                return self.async_create_entry(title=title, data=user_input)
 
             except CannotConnect:
                 errors["base"] = "cannot_connect"
@@ -100,6 +106,10 @@ class OpenMeteoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Show form with defaults from Home Assistant configuration
         data_schema = vol.Schema(
             {
+                vol.Optional(
+                    CONF_NAME,
+                    default=DEFAULT_NAME,
+                ): str,
                 vol.Required(
                     CONF_LATITUDE,
                     default=self.hass.config.latitude,
@@ -146,10 +156,15 @@ class OpenMeteoOptionsFlowHandler(config_entries.OptionsFlow):
                 if new_lat != old_lat or new_lon != old_lon:
                     await validate_coordinates(self.hass, new_lat, new_lon)
 
-                # Update the config entry with new data
+                # Update the config entry with new data and title if name changed
+                location_name = user_input.get(CONF_NAME, DEFAULT_NAME)
+                title = f"Open-Meteo CloudCover - {location_name}"
+
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
+                    title=title,
                     data={
+                        CONF_NAME: location_name,
                         CONF_LATITUDE: new_lat,
                         CONF_LONGITUDE: new_lon,
                         CONF_FORECAST_DAYS: user_input[CONF_FORECAST_DAYS],
@@ -171,6 +186,10 @@ class OpenMeteoOptionsFlowHandler(config_entries.OptionsFlow):
         # Show form with current values
         data_schema = vol.Schema(
             {
+                vol.Optional(
+                    CONF_NAME,
+                    default=self.config_entry.data.get(CONF_NAME, DEFAULT_NAME),
+                ): str,
                 vol.Required(
                     CONF_LATITUDE,
                     default=self.config_entry.data.get(CONF_LATITUDE),

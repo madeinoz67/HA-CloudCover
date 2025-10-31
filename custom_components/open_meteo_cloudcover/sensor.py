@@ -15,7 +15,7 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_FORECAST_DAYS, CONF_LATITUDE, CONF_LONGITUDE, DEFAULT_FORECAST_DAYS, DOMAIN, SENSOR_TYPES, get_day_name
+from .const import CONF_FORECAST_DAYS, CONF_LATITUDE, CONF_LONGITUDE, CONF_NAME, DEFAULT_FORECAST_DAYS, DEFAULT_NAME, DOMAIN, SENSOR_TYPES, get_day_name
 from .coordinator import OpenMeteoDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,6 +55,19 @@ async def async_setup_entry(
             )
         )
 
+        # Create hourly sensors (hours 1-24, disabled by default)
+        for hour_offset in range(1, 25):
+            entities.append(
+                OpenMeteoSensor(
+                    coordinator=coordinator,
+                    entry=entry,
+                    sensor_type=sensor_type,
+                    day_offset=None,
+                    special_type="hourly",
+                    hour_offset=hour_offset,
+                )
+            )
+
         # Create a sensor for each day (0 = today, 1 = tomorrow, etc.)
         for day_offset in range(forecast_days + 1):  # +1 to include today
             entities.append(
@@ -80,6 +93,7 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
         sensor_type: str,
         day_offset: int | None,
         special_type: str | None = None,
+        hour_offset: int | None = None,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -87,6 +101,7 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
         self._sensor_type = sensor_type
         self._day_offset = day_offset
         self._special_type = special_type
+        self._hour_offset = hour_offset
 
         # Build sensor key and name based on type
         base_name = SENSOR_TYPES[sensor_type]["name"]
@@ -99,6 +114,10 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
             self._sensor_key = f"{sensor_type}_next_hour"
             self._attr_name = f"{base_name} Next Hour"
             self._attr_unique_id = f"{entry.entry_id}_{sensor_type}_next_hour"
+        elif special_type == "hourly":
+            self._sensor_key = f"{sensor_type}_hour_{hour_offset}"
+            self._attr_name = f"{base_name} Hour {hour_offset}"
+            self._attr_unique_id = f"{entry.entry_id}_{sensor_type}_hour_{hour_offset}"
         else:
             # Regular day-based sensor
             self._sensor_key = f"{sensor_type}_{day_offset}"
@@ -116,14 +135,22 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
         if SENSOR_TYPES[sensor_type]["state_class"]:
             self._attr_state_class = SENSOR_TYPES[sensor_type]["state_class"]
 
-        # Disable by default for cloud_cover_low, cloud_cover_mid, cloud_cover_high
-        if sensor_type in ("cloud_cover_low", "cloud_cover_mid", "cloud_cover_high"):
+        # Disable by default for:
+        # - cloud_cover_low, cloud_cover_mid, cloud_cover_high
+        # - all hourly sensors
+        # - extended daily sensors (days 3-7)
+        if (
+            sensor_type in ("cloud_cover_low", "cloud_cover_mid", "cloud_cover_high")
+            or special_type == "hourly"
+            or (day_offset is not None and day_offset >= 3)
+        ):
             self._attr_entity_registry_enabled_default = False
 
         # Device info to group all sensors under one device
+        location_name = entry.data.get(CONF_NAME, DEFAULT_NAME)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
-            name=f"Open-Meteo CloudCover",
+            name=f"Open-Meteo CloudCover - {location_name}",
             manufacturer="Open-Meteo",
             model="CloudCover Station",
             entry_type=DeviceEntryType.SERVICE,
@@ -136,8 +163,8 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
         if self.coordinator.data:
             sensor_data = self.coordinator.data.get(self._sensor_key)
             if sensor_data:
-                # For this_hour and next_hour, return the value directly
-                if self._special_type in ("this_hour", "next_hour"):
+                # For this_hour, next_hour, and hourly sensors, return the value directly
+                if self._special_type in ("this_hour", "next_hour", "hourly"):
                     return sensor_data.get("value")
                 # For day-based sensors, return daily average
                 return sensor_data.get("avg")
@@ -157,14 +184,18 @@ class OpenMeteoSensor(CoordinatorEntity, SensorEntity):
         sensor_data = self.coordinator.data.get(self._sensor_key, {})
         metadata = self.coordinator.data.get("_metadata", {})
 
-        # For this_hour and next_hour sensors, return minimal attributes
-        if self._special_type in ("this_hour", "next_hour"):
-            return {
+        # For this_hour, next_hour, and hourly sensors, return minimal attributes
+        if self._special_type in ("this_hour", "next_hour", "hourly"):
+            attributes = {
                 "latitude": metadata.get("latitude"),
                 "longitude": metadata.get("longitude"),
                 "timezone": metadata.get("timezone"),
                 "elevation": metadata.get("elevation"),
             }
+            # Add hour_offset for hourly sensors
+            if self._special_type == "hourly":
+                attributes["hour_offset"] = sensor_data.get("hour_offset")
+            return attributes
 
         # For day-based sensors, include full forecast data
         attributes = {

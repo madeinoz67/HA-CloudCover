@@ -6,11 +6,12 @@ DOMAIN = "open_meteo_cloudcover"
 CONF_LATITUDE = "latitude"
 CONF_LONGITUDE = "longitude"
 CONF_FORECAST_DAYS = "forecast_days"
+CONF_NAME = "name"
 
 # Defaults
-DEFAULT_NAME = "Open-Meteo CloudCover"
+DEFAULT_NAME = "Home"
 DEFAULT_SCAN_INTERVAL = 3600  # 1 hour in seconds
-DEFAULT_FORECAST_DAYS = 2  # Current day + next day
+DEFAULT_FORECAST_DAYS = 7  # Current day + next 6 days
 MIN_FORECAST_DAYS = 1
 MAX_FORECAST_DAYS = 7
 

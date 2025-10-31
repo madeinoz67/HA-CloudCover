@@ -15,11 +15,24 @@ This integration creates sensors for:
 - **Cloud Cover Mid** - Mid-altitude cloud coverage (%)
 - **Cloud Cover High** - High-altitude cloud coverage (%)
 
-Each sensor includes:
-- Current value
-- 24-hour historical data
-- Min/max/average values for the last 24 hours
+The integration creates sensors for each metric in multiple time formats:
+- **This Hour** - Current hour block value (e.g., at 11:30, shows 11:00 forecast)
+- **Next Hour** - Next hour block value (e.g., at 11:30, shows 12:00 forecast)
+- **Hourly Sensors** - Hours 1-24 from current time (disabled by default)
+- **Daily Sensors** - Days 0-7 (Today through Day 7)
+  - Days 0-2 (Today, Tomorrow, Day 2) enabled by default
+  - Days 3-7 disabled by default
+
+Each daily sensor includes:
+- Daily average value
+- Hourly forecast data for the day
+- Min/max/average values
 - Location metadata (latitude, longitude, timezone, elevation)
+
+Each hourly sensor includes:
+- Specific hour forecast value
+- Hour offset from current time
+- Location metadata
 
 ## Installation
 
@@ -46,33 +59,67 @@ You can simply click "Submit" without changing anything to use your Home Assista
 
 ## Data Updates
 
-The integration fetches data from the Open-Meteo API every hour (3600 seconds). This is a reasonable interval for weather and soil condition monitoring while respecting the API's free tier.
+The integration fetches data from the Open-Meteo API at hourly boundaries (XX:00:05). This alignment ensures fresh data is available at the start of each hour while respecting the API's free tier.
 
 ## Sensors
 
 All sensors are grouped under a single device called "Open-Meteo CloudCover" for easy organization.
 
-### Example Sensor Attributes
+**Total Sensors**: 304 sensors (40 enabled by default)
+- This Hour sensors: 8 (enabled)
+- Next Hour sensors: 8 (enabled)
+- Hourly sensors: 192 (24 hours × 8 metrics, disabled by default)
+- Daily sensors (Days 0-2): 24 (enabled)
+- Extended daily sensors (Days 3-7): 40 (disabled by default)
+
+**Disabled by Default**:
+- Cloud Cover Low, Mid, and High sensors (all time periods)
+- All hourly forecast sensors (Hours 1-24)
+- Extended daily forecast sensors (Days 3-7)
+
+All disabled sensors can be enabled via the entity registry in Home Assistant.
+
+### Example Daily Sensor Attributes
+
+```yaml
+state: 45.5
+date: "2025-10-30"
+day_offset: 0
+day_name: "Today"
+latitude: -33.375
+longitude: 115.625
+timezone: "Australia/Perth"
+elevation: 3.0
+forecast_data:
+  "2025-10-30T00:00": 42
+  "2025-10-30T01:00": 43
+  "2025-10-30T02:00": 44
+  # ... (hourly data for the day)
+  "2025-10-30T23:00": 48
+min: 35
+max: 58
+avg: 45.5
+```
+
+### Example This Hour / Next Hour Sensor Attributes
 
 ```yaml
 state: 45
-latest_update: "2025-10-30T12:00"
 latitude: -33.375
 longitude: 115.625
-timezone: GMT
+timezone: "Australia/Perth"
 elevation: 3.0
-history_24h:
-  times:
-    - "2025-10-29T13:00"
-    - "2025-10-29T14:00"
-    # ... (24 hours of data)
-  values:
-    - 42
-    - 44
-    # ... (24 hours of data)
-min_24h: 35
-max_24h: 58
-avg_24h: 45.5
+```
+
+### Example Hourly Sensor Attributes
+
+```yaml
+state: 47
+hour_offset: 5
+latitude: -33.375
+longitude: 115.625
+timezone: "Australia/Perth"
+elevation: 3.0
 ```
 
 ## API Information
