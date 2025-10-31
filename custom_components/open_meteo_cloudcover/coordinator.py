@@ -41,12 +41,22 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
         self.longitude = longitude
         self.forecast_days = forecast_days
 
+        # Start with default interval, will be adjusted after first update
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
         )
+
+    def _calculate_next_update_interval(self) -> timedelta:
+        """Calculate interval to next hour boundary plus a few seconds."""
+        now = dt_util.now()
+        # Get next hour boundary
+        next_hour = (now + timedelta(hours=1)).replace(minute=0, second=5, microsecond=0)
+        # Calculate time until next hour (plus 5 seconds to ensure we're past the hour)
+        interval = next_hour - now
+        return interval
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from Open-Meteo API."""
@@ -275,5 +285,8 @@ class OpenMeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     "max": round(max(values), 2) if values else None,
                     "avg": round(sum(values) / len(values), 2) if values else None,
                 }
+
+        # Adjust next update to align with hour boundary
+        self.update_interval = self._calculate_next_update_interval()
 
         return sensor_data
